@@ -7,17 +7,18 @@ import java.util.List;
 import java.util.Set;
 
 import simsearch.NearDuplicateSearch;
-import util.SimpleTokenizer;
+import util.Tokenizer;
 import wikirate.Source;
 
 public class JaccardSimilaritySearch implements NearDuplicateSearch {
 
 
-	public JaccardSimilaritySearch(List<Source> sources){
+	public JaccardSimilaritySearch(List<Source> sources, Tokenizer tokenizer){
 		this.sources = sources;
+		this.tokenizer = tokenizer;
 	}
 	private final List<Source> sources;
-	private final SimpleTokenizer tokenizer = new SimpleTokenizer();
+	private final Tokenizer tokenizer;
 
 	
 	public List<Source> findNearestDocuments(String query, int N) {

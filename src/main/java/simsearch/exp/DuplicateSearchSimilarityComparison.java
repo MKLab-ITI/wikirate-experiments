@@ -7,70 +7,100 @@ import java.util.List;
 import simsearch.NearDuplicateSearch;
 import simsearch.impl.JaccardSimilaritySearch;
 import util.SimpleTokenizer;
+import util.Tokenizer;
 import wikirate.Source;
 
 public class DuplicateSearchSimilarityComparison {
 
-	private final SimpleTokenizer tokenizer = new SimpleTokenizer();
+	
+	public DuplicateSearchSimilarityComparison(DataLoader dLoader, Tokenizer tokenizer, NearDuplicateSearch nnSearch){
+		this.tokenizer = tokenizer;
+		this.nnSearch = nnSearch;
+		this.dLoader = dLoader;
+	}
+	private Tokenizer tokenizer = null;
+	private NearDuplicateSearch nnSearch = null;
+	private DataLoader dLoader = null;
 	
 	public static void main(String[] args) {
 		
-		DuplicateSearchSimilarityComparison exp = new DuplicateSearchSimilarityComparison();
-		
 		String root = args[0];
-		DataLoader dloader = DataLoader.loadDefaultDatasetLoader(root);
+		DataLoader dLoader = DataLoader.loadDefaultDatasetLoader(root);
+		Tokenizer tokenizer = new SimpleTokenizer();
 		
-		List<Source> wikirateSources = dloader.getSources();
-		NearDuplicateSearch nnSearch = new JaccardSimilaritySearch(wikirateSources);
+		NearDuplicateSearch nnSearch = new JaccardSimilaritySearch(dLoader.getSources(), tokenizer);
 		
-		int nQueries = wikirateSources.size() > 1000 ? 1000 : wikirateSources.size();
-		List<Source> queryDocuments = wikirateSources.subList(0, nQueries);
+		DuplicateSearchSimilarityComparison exp = new DuplicateSearchSimilarityComparison(dLoader, tokenizer, nnSearch);
 		
+		int nQueries = dLoader.getSources().size() > 1000 ? 1000 : dLoader.getSources().size();
+		List<Source> candidateQueries = dLoader.getSources().subList(0, nQueries);
+		List<Source> queryDocuments = new ArrayList<Source>();
+		// filter queries
+		for (int i = 0; i < candidateQueries.size(); i++){
+			if (candidateQueries.get(i).getTitle().length() > 50){
+				queryDocuments.add(candidateQueries.get(i));
+			}
+		}
+		exp.runNearDuplicateBenchmark(queryDocuments);
 		
+	}
+	
+	
+	public void runNearDuplicateBenchmark(List<Source> queryDocuments){
 		int[] countCorrect = new int[5];
-		int countUsed = 0;
+		
 		for (int i = 0; i < queryDocuments.size(); i++){
 			Source qSource = queryDocuments.get(i);
 			String query = qSource.getTitle();
-			
-			if (query.length() < 60){
-				continue;
-			}
-			countUsed++;
 			
 			List<Source> results = nnSearch.findNearestDocuments(query, 1);
 			if (results.get(0).getId().equals(qSource.getId())){
 				countCorrect[0]++;
 			}
-			results = nnSearch.findNearestDocuments(exp.permuteTerms(query), 1);
+			results = nnSearch.findNearestDocuments(permuteTerms(query), 1);
 			if (results.get(0).getId().equals(qSource.getId())){
 				countCorrect[1]++;
 			}
-			results = nnSearch.findNearestDocuments(exp.addTerms(query, 1, dloader), 1);
+			results = nnSearch.findNearestDocuments(addTerms(query, 1, dLoader), 1);
 			if (results.get(0).getId().equals(qSource.getId())){
 				countCorrect[2]++;
 			}
-			results = nnSearch.findNearestDocuments(exp.removeTerms(query, 1), 1);
+			results = nnSearch.findNearestDocuments(removeTerms(query, 1), 1);
 			if (results.get(0).getId().equals(qSource.getId())){
 				countCorrect[3]++;
 			}
-			results = nnSearch.findNearestDocuments(exp.randomSelectTerms(query), 1);
+			results = nnSearch.findNearestDocuments(randomSelectTerms(query), 1);
 			if (results.get(0).getId().equals(qSource.getId())){
 				countCorrect[4]++;
+			} else {
+				System.out.println("Missed: " + qSource.getId() + " " + query);
+				System.out.println("--> result: " + results.get(0).getId() + " " + results.get(0).getTitle());
 			}
 		}
-		System.out.println("P@1 for " + countUsed + " queries");
-		System.out.println("same query: " + (double)100*countCorrect[0]/((double)countUsed));
-		System.out.println("permuted terms: " + (double)100*countCorrect[1]/((double)countUsed));
-		System.out.println("added 1 term: " + (double)100*countCorrect[2]/((double)countUsed));
-		System.out.println("removed 1 term: " + (double)100*countCorrect[3]/((double)countUsed));
-		System.out.println("random re-arrange terms: " + (double)100*countCorrect[4]/((double)countUsed));
+		System.out.println("P@1 for " + queryDocuments.size() + " queries");
+		System.out.println("same query: " + (double)100*countCorrect[0]/((double)queryDocuments.size()));
+		System.out.println("permuted terms: " + (double)100*countCorrect[1]/((double)queryDocuments.size()));
+		System.out.println("added 1 term: " + (double)100*countCorrect[2]/((double)queryDocuments.size()));
+		System.out.println("removed 1 term: " + (double)100*countCorrect[3]/((double)queryDocuments.size()));
+		System.out.println("random re-arrange terms: " + (double)100*countCorrect[4]/((double)queryDocuments.size()));
 		
 	}
 	
 	
 	
+	protected Tokenizer getTokenizer(){
+		return tokenizer;	
+	}
+	public void setTokenizer(Tokenizer tokenizer){
+		this.tokenizer = tokenizer;
+	}
 	
+	protected NearDuplicateSearch getNNSearch(){
+		return nnSearch;
+	}
+	public void setNearDuplicateSearch(NearDuplicateSearch nnSearch){
+		this.nnSearch = nnSearch;
+	}
 	
 	protected String permuteTerms(String text){
 		List<String> tokens = tokenizer.getTokens(text);

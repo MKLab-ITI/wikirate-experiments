@@ -10,7 +10,7 @@ import java.util.List;
  * @author papadop
  *
  */
-public class SimpleTokenizer {
+public class SimpleTokenizer implements Tokenizer {
 
 	/**
 	 * Utility method for splitting a piece of text to tokens
