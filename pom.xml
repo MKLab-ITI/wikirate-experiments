@@ -35,6 +35,12 @@
 		<artifactId>guava-collections</artifactId>
 		<version>r03</version>
 	</dependency>
+	
+	<dependency>
+        <groupId>eu.socialsensor</groupId>
+        <artifactId>socialsensor-framework-client</artifactId>
+        <version>0.1</version>
+    </dependency>
 
 
   </dependencies>

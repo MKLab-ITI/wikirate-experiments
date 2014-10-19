@@ -1,4 +1,4 @@
-package simsearch.exp;
+package data;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -115,6 +115,7 @@ public class DataLoader {
 		reader.close();
 		return sources;
 	}
+	
 	
 	public int getDictionarySize(){
 		return terms.size();

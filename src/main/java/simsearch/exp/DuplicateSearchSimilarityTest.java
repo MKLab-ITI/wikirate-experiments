@@ -3,6 +3,7 @@ package simsearch.exp;
 import java.util.ArrayList;
 import java.util.List;
 
+import data.DataLoader;
 import simsearch.NearDuplicateSearch;
 import simsearch.impl.JaccardSimilaritySearch;
 import util.SimpleTokenizer;
